@@ -396,9 +396,10 @@ export default function App() {
         const ctx = canvas.getContext("2d");
         
         if (ctx) {
+          ctx.clearRect(0, 0, width, height);
           ctx.drawImage(img, 0, 0, width, height);
-          // jpeg 0.75 퀄리티로 가볍고 우아하게 압축 (용량을 20~45KB 수준으로 극대화하여 줄여 랙 유발 전면 차단)
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.75);
+          // webp 포맷으로 압축 (투명도 지원 및 용량 최적화)
+          const compressedBase64 = canvas.toDataURL("image/webp", 0.85);
           onComplete(compressedBase64);
         } else {
           onComplete(ev.target?.result as string);
@@ -687,45 +688,17 @@ export default function App() {
       {/* Elegant floating line and music animated background */}
       <FloatingMusicBg theme={theme} />
 
-      {/* 1. TOP HEADER & NAVIGATION BAR (Now placed at the absolute top of the page) */}
-      <div className="w-full flex items-center justify-between px-10 py-6 shrink-0 relative z-50 border-b border-black/[0.04] dark:border-white/[0.04]">
+      {/* 1. TOP HEADER & NAVIGATION BAR (이제 absolute로 띄워서 로고 영역과 아름답게 겹치도록 설정) */}
+      <div className="absolute top-0 left-0 w-full flex items-center justify-between px-10 py-3 shrink-0 z-50 border-b border-black/[0.04] dark:border-white/[0.04]">
         {/* Left: Title */}
         <h1
           className={`text-2xl lg:text-4xl font-black italic tracking-tighter shrink-0 ${theme === "dark" ? "text-white" : "text-black"}`}
         >
           {contentTitle.split(" ")[0]}{" "}
-          <span className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-8">
+          <span className="text-indigo-500">
             {contentTitle.split(" ").slice(1).join(" ") || ""}
           </span>
         </h1>
-
-        {/* Center: Tabs Navigation */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 p-1.5 rounded-2xl bg-black/5 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/5">
-          {[
-            {
-              id: "PICKING",
-              label: "추첨",
-              icon: <Dices className="w-4 h-4" />,
-            },
-            {
-              id: "TOURNAMENT",
-              label: `${targetCount}강 대진표`,
-              icon: <Trophy className="w-4 h-4" />,
-            },
-          ].map((p) => (
-            <button
-              key={p.id}
-              onClick={() => {
-                const newPhase = p.id as any;
-                setPhase(newPhase);
-                saveSession({ phase: newPhase });
-              }}
-              className={`flex items-center gap-2 px-8 py-3 rounded-xl font-black text-xs transition-all duration-300 ${phase === p.id ? "bg-indigo-600 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)] scale-105" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"}`}
-            >
-              {p.icon} {p.label}
-            </button>
-          ))}
-        </div>
 
         {/* Right: Action Buttons */}
         <div className="flex items-center gap-4">
@@ -748,14 +721,14 @@ export default function App() {
         </div>
       </div>
 
-      {/* 2. DYNAMIC LOGO BANNER AREA (Now placed under the Navigation Header) */}
-      <div className="h-[18vh] w-full flex items-center justify-center p-4 shrink-0 relative z-10 select-none">
+      {/* 2. DYNAMIC LOGO BANNER AREA (헤더 뒷편으로 겹치며, 높이를 더욱 키우고 최상단으로 한껏 배치) */}
+      <div className="h-[52vh] w-full flex items-center justify-center p-4 pt-14 shrink-0 relative z-10 select-none">
         {logoImage ? (
-          <div className="h-full max-w-full flex items-center justify-center pointer-events-none">
+          <div className="h-full w-full flex items-center justify-center pointer-events-none">
             <img
               src={logoImage}
               alt="Main Logo"
-              className="h-full w-auto object-contain drop-shadow-2xl"
+              className="h-full max-h-[48vh] w-auto max-w-[90vw] object-contain drop-shadow-2xl"
             />
           </div>
         ) : (
@@ -769,16 +742,44 @@ export default function App() {
 
       {/* 3. MAIN CONTENT AND INTERFACES CONTAINER */}
       <div
-        className={`flex-1 w-full relative z-10 flex flex-col overflow-hidden ${theme === "dark" ? "bg-gradient-to-t from-gray-950/80 via-transparent to-transparent" : "bg-gradient-to-t from-gray-50/80 via-transparent to-transparent"}`}
+        className={`flex-1 w-full relative z-20 flex flex-col overflow-visible min-h-0 ${theme === "dark" ? "bg-gradient-to-t from-gray-950/80 via-transparent to-transparent" : "bg-gradient-to-t from-gray-50/80 via-transparent to-transparent"}`}
       >
-        {/* Picking Interface */}
-        {phase === "PICKING" && (
-          <div className="flex-1 flex flex-col overflow-hidden w-full max-w-7xl mx-auto">
-            {/* Action Control Row */}
-            <div className="flex items-center justify-center gap-6 mb-8 px-10 shrink-0">
+        {/* Shared Phase Navigation & Controls (마진 조정을 통해 버튼을 위로 올리고, 참가자 카드와의 사이 공간을 확보) */}
+        <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-10 mb-10 shrink-0 -mt-12 pt-1 z-30">
+          {/* Left: Phase Navigation Tabs */}
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-black/5 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/5">
+            {[
+              {
+                id: "PICKING",
+                label: "추첨",
+                icon: <Dices className="w-4 h-4" />,
+              },
+              {
+                id: "TOURNAMENT",
+                label: `${targetCount}강 대진표`,
+                icon: <Trophy className="w-4 h-4" />,
+              },
+            ].map((p) => (
+              <button
+                key={p.id}
+                onClick={() => {
+                  const newPhase = p.id as any;
+                  setPhase(newPhase);
+                  saveSession({ phase: newPhase });
+                }}
+                className={`flex items-center gap-2 px-8 py-3 rounded-xl font-black text-xs transition-all duration-300 ${phase === p.id ? "bg-indigo-600 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)] scale-105" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"}`}
+              >
+                {p.icon} {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Right: Action Buttons (Only in Picking) */}
+          {phase === "PICKING" && (
+            <div className="flex items-center justify-end gap-4">
               <button
                 onClick={() => setShowWinnersModal(true)}
-                className={`flex items-center gap-4 px-6 h-[64px] rounded-2xl backdrop-blur-xl border shadow-xl transition-all hover:scale-105 active:scale-95 ${theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10" : "bg-white/90 border-gray-200 hover:bg-white"}`}
+                className={`flex items-center gap-4 px-6 h-[52px] rounded-2xl backdrop-blur-xl border shadow-xl transition-all hover:scale-105 active:scale-95 ${theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10" : "bg-white/90 border-gray-200 hover:bg-white"}`}
               >
                 <div className="flex items-baseline gap-2">
                   <Users
@@ -800,14 +801,12 @@ export default function App() {
                 </div>
               </button>
 
-              <div className="h-10 w-px bg-black/10 dark:bg-white/10 mx-2"></div>
-
               {passedCount >= targetCount ? (
                 <motion.button
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   onClick={startTournament}
-                  className="group relative flex items-center justify-center gap-3 w-[220px] h-[64px] bg-indigo-600 text-white rounded-2xl font-black shadow-[0_15px_30px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all overflow-hidden"
+                  className="group relative flex items-center justify-center gap-3 w-[220px] h-[52px] bg-indigo-600 text-white rounded-2xl font-black shadow-[0_15px_30px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all overflow-hidden"
                 >
                   <Trophy className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                   <span>{targetCount}강 토너먼트 시작</span>
@@ -816,7 +815,7 @@ export default function App() {
                 <button
                   onClick={startRandomPick}
                   disabled={isPicking || participants.length === 0}
-                  className={`relative group w-[220px] h-[64px] rounded-2xl font-black shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
+                  className={`relative group w-[220px] h-[52px] rounded-2xl font-black shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
                     theme === "dark"
                       ? "bg-white/10 text-white hover:bg-white/20 disabled:bg-gray-900 disabled:text-gray-700"
                       : "bg-indigo-600 text-white hover:bg-indigo-500 disabled:bg-gray-200 disabled:text-gray-400 shadow-indigo-200"
@@ -829,7 +828,12 @@ export default function App() {
                 </button>
               )}
             </div>
+          )}
+        </div>
 
+        {/* Picking Interface */}
+        {phase === "PICKING" && (
+          <div className="flex-1 flex flex-col overflow-hidden w-full max-w-7xl mx-auto">
             {/* Grid Area */}
             <div className="flex-1 overflow-y-auto no-scrollbar pb-20 px-6 md:px-10 lg:px-14">
               <div
