@@ -692,7 +692,7 @@ export default function App() {
       <div className="absolute top-0 left-0 w-full flex items-center justify-between px-10 py-3 shrink-0 z-50 border-b border-black/[0.04] dark:border-white/[0.04]">
         {/* Left: Title */}
         <h1
-          className={`text-2xl lg:text-4xl font-black italic tracking-tighter shrink-0 ${theme === "dark" ? "text-white" : "text-black"}`}
+          className={`text-2xl lg:text-4xl font-black tracking-tighter shrink-0 ${theme === "dark" ? "text-white" : "text-black"}`}
         >
           {contentTitle.split(" ")[0]}{" "}
           <span className="text-indigo-500">
@@ -724,13 +724,24 @@ export default function App() {
       {/* 2. DYNAMIC LOGO BANNER AREA (헤더 뒷편으로 겹치며, 높이를 더욱 키우고 최상단으로 한껏 배치) */}
       <div className="h-[52vh] w-full flex items-center justify-center p-4 pt-14 shrink-0 relative z-10 select-none">
         {logoImage ? (
-          <div className="h-full w-full flex items-center justify-center pointer-events-none">
+          <motion.div
+            animate={{
+              y: [0, -15, 0],
+              rotate: [0, 1.2, -1.2, 0],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="h-full w-full flex items-center justify-center pointer-events-none"
+          >
             <img
               src={logoImage}
               alt="Main Logo"
               className="h-full max-h-[48vh] w-auto max-w-[90vw] object-contain drop-shadow-2xl"
             />
-          </div>
+          </motion.div>
         ) : (
           <div
             className={`text-4xl lg:text-7xl font-black tracking-tighter italic opacity-10 select-none uppercase ${theme === "dark" ? "text-white" : "text-gray-900"}`}
