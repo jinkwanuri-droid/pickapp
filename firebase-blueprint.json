@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "AppSession": {
+      "title": "AppSession",
+      "description": "Entire state of the picking and tournament application",
+      "type": "object",
+      "properties": {
+        "participants": {
+          "type": "array",
+          "description": "List of participant names"
+        },
+        "targetCount": {
+          "type": "number",
+          "description": "Target number of winners for the tournament"
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["light", "dark"]
+        },
+        "logoImage": {
+          "type": "string",
+          "description": "Base64 encoded logo image"
+        },
+        "statuses": {
+          "type": "object",
+          "description": "Status of each participant (WAITING, PICKED, PASS, FAIL, etc.)"
+        },
+        "phase": {
+          "type": "string",
+          "enum": ["PICKING", "TOURNAMENT", "RANKINGS"]
+        },
+        "qf": {
+          "type": "array",
+          "description": "Quarterfinal matches"
+        },
+        "sf": {
+          "type": "array",
+          "description": "Semifinal matches"
+        },
+        "final": {
+          "type": "object",
+          "description": "Final match state"
+        },
+        "rankings": {
+          "type": "array",
+          "description": "Final ranking list"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["participants", "targetCount", "theme", "phase", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/sessions/{sessionId}": {
+      "schema": "AppSession",
+      "description": "A shared session containing participants and tournament state"
+    }
+  }
+}
