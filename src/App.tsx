@@ -89,9 +89,9 @@ export default function App() {
   );
 
   // Custom Settings
-  const [contentTitle, setContentTitle] = useState<string>("PICKER APP");
+  const [contentTitle, setContentTitle] = useState<string>("PICK APP");
   const [tempContentTitle, setTempContentTitle] =
-    useState<string>("PICKER APP");
+    useState<string>("PICK APP");
   const [hideNames, setHideNames] = useState<boolean>(false);
   const [gridCols, setGridCols] = useState<number>(8);
   const [capsuleAspect, setCapsuleAspect] = useState<number>(2.4);
@@ -137,8 +137,8 @@ export default function App() {
           setRankings(data.rankings || []);
 
           // Load custom titling and sizing parameters
-          setContentTitle(data.contentTitle || "PICKER APP");
-          setTempContentTitle(data.contentTitle || "PICKER APP");
+          setContentTitle(data.contentTitle || "PICK APP");
+          setTempContentTitle(data.contentTitle || "PICK APP");
           setHideNames(data.hideNames !== undefined ? data.hideNames : false);
           setGridCols(
             data.gridCols || getAutoGridCols(data.participants?.length || 0),
@@ -277,7 +277,7 @@ export default function App() {
             targetCount: 8,
             theme: "light",
             logoImage: null,
-            contentTitle: "PICKER APP",
+            contentTitle: "PICK APP",
             hideNames: false,
             gridCols: 8,
             capsuleAspect: 2.4,
@@ -702,7 +702,7 @@ export default function App() {
           whileTap={player && !isLoser ? { scale: 0.98 } : {}}
           disabled={!player}
           onClick={() => advancePlayer(phaseLabel, match.id, player)}
-          className={`relative w-full px-4 ${isFinal ? "py-4 text-sm" : "py-3 text-xs"} font-black rounded-xl overflow-hidden transition-all duration-300 pointer-events-auto flex items-center justify-between border ${
+          className={`relative w-full px-4 ${isFinal ? "py-4 text-base" : "py-3 text-xs"} font-black rounded-xl overflow-hidden transition-all duration-300 pointer-events-auto flex items-center justify-between border ${
             isWinner
               ? "bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600 text-white shadow-[0_8px_25px_rgba(99,102,241,0.4)] border-indigo-400/30 z-20"
               : player && !match.winner
@@ -711,8 +711,8 @@ export default function App() {
                   : "bg-gray-100/70 hover:bg-gray-200/90 hover:text-indigo-600 text-gray-800 border-gray-200 hover:border-indigo-500/50 cursor-pointer"
                 : player && isLoser
                   ? isDark
-                    ? "bg-black/30 text-white/20 border-transparent scale-95 opacity-40 grayscale"
-                    : "bg-gray-50/70 text-gray-300 border-transparent scale-95 opacity-40 grayscale"
+                    ? "bg-black/30 text-white/50 border-transparent scale-95 opacity-70 grayscale"
+                    : "bg-gray-200/50 text-gray-500 border-transparent scale-95 opacity-70 grayscale"
                   : isDark
                     ? "bg-black/10 text-white/5 border-white/5 pointer-events-none"
                     : "bg-gray-50/30 text-gray-200 border-gray-100 pointer-events-none"
@@ -1204,7 +1204,7 @@ export default function App() {
                           value={tempContentTitle}
                           onChange={(e) => setTempContentTitle(e.target.value)}
                           className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${theme === "dark" ? "bg-black/50 border-white/10 text-white" : "bg-white border-black/10 text-black"}`}
-                          placeholder="PICKER APP"
+                          placeholder="PICK APP"
                         />
                         <button
                           onClick={() => {
@@ -1291,7 +1291,7 @@ export default function App() {
                         대진표 목표 (강)
                       </label>
                       <div className="flex gap-1">
-                        {[4, 8, 16].map((num) => (
+                        {[4, 8].map((num) => (
                           <button
                             key={num}
                             onClick={() => {
