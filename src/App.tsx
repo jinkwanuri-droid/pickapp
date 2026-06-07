@@ -806,7 +806,7 @@ export default function App() {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   onClick={startTournament}
-                  className="group relative flex items-center justify-center gap-3 w-[220px] h-[52px] bg-indigo-600 text-white rounded-2xl font-black shadow-[0_15px_30px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all overflow-hidden"
+                  className="group relative flex items-center justify-center gap-3 w-[180px] h-[52px] bg-indigo-600 text-white rounded-2xl font-black shadow-[0_15px_30px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all overflow-hidden"
                 >
                   <Trophy className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                   <span>{targetCount}강 토너먼트 시작</span>
@@ -815,7 +815,7 @@ export default function App() {
                 <button
                   onClick={startRandomPick}
                   disabled={isPicking || participants.length === 0}
-                  className={`relative group w-[220px] h-[52px] rounded-2xl font-black shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
+                  className={`relative group w-[180px] h-[52px] rounded-2xl font-black shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
                     theme === "dark"
                       ? "bg-white/10 text-white hover:bg-white/20 disabled:bg-gray-900 disabled:text-gray-700"
                       : "bg-indigo-600 text-white hover:bg-indigo-500 disabled:bg-gray-200 disabled:text-gray-400 shadow-indigo-200"
@@ -863,8 +863,8 @@ export default function App() {
                     } else if (status === "FAIL") {
                       statusClasses =
                         theme === "dark"
-                          ? "bg-gray-900 border-white/5 text-white/10 opacity-20 scale-90 grayscale"
-                          : "bg-gray-300 border-gray-400 text-black/10 opacity-30 scale-90 grayscale";
+                          ? "bg-gray-900 border-white/5 text-white/30 scale-90 grayscale"
+                          : "bg-gray-200 border-gray-300 text-gray-400 scale-90 grayscale";
                     } else if (status === "COMPLETE") {
                       statusClasses =
                         theme === "dark"
