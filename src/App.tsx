@@ -557,49 +557,120 @@ export default function App() {
     if (!player) return;
 
     let updates: any = {};
+    
     if (matchPhase === "qf") {
       const idx = matchId - 1;
       const updatedQf = [...qf];
-      updatedQf[idx].winner = player;
+      const updatedSf = [...sf];
+      const updatedFinal = final ? { ...final } : null;
+      
+      if (updatedQf[idx].winner === player) {
+        // 이미 해당 자가 승자이면 승자 지정 전면 취소 (Rollback)
+        updatedQf[idx].winner = null;
+        
+        // 4강(세미파이널)의 해당 슬롯 대기상태 처리 및 4강 승자였을 경우 4강 승자도 자동 취소
+        if (matchId === 1) {
+          if (updatedSf[0].winner === updatedSf[0].p1) updatedSf[0].winner = null;
+          updatedSf[0].p1 = "";
+        } else if (matchId === 2) {
+          if (updatedSf[0].winner === updatedSf[0].p2) updatedSf[0].winner = null;
+          updatedSf[0].p2 = "";
+        } else if (matchId === 3) {
+          if (updatedSf[1].winner === updatedSf[1].p1) updatedSf[1].winner = null;
+          updatedSf[1].p1 = "";
+        } else if (matchId === 4) {
+          if (updatedSf[1].winner === updatedSf[1].p2) updatedSf[1].winner = null;
+          updatedSf[1].p2 = "";
+        }
+        
+        // 결승(파이널)의 해당 슬롯 대기상태 처리 및 결승 승자도 자동 취소
+        if (updatedFinal) {
+          if (matchId === 1 || matchId === 2) {
+            if (updatedFinal.winner === updatedFinal.p1) updatedFinal.winner = null;
+            updatedFinal.p1 = "";
+          } else {
+            if (updatedFinal.winner === updatedFinal.p2) updatedFinal.winner = null;
+            updatedFinal.p2 = "";
+          }
+        }
+      } else {
+        // 새로 승자 지정
+        updatedQf[idx].winner = player;
+        if (matchId === 1) updatedSf[0].p1 = player;
+        else if (matchId === 2) updatedSf[0].p2 = player;
+        else if (matchId === 3) updatedSf[1].p1 = player;
+        else if (matchId === 4) updatedSf[1].p2 = player;
+      }
+      
       setQf(updatedQf);
       updates.qf = updatedQf;
-
-      const updatedSf = [...sf];
-      if (matchId === 1) updatedSf[0].p1 = player;
-      else if (matchId === 2) updatedSf[0].p2 = player;
-      else if (matchId === 3) updatedSf[1].p1 = player;
-      else if (matchId === 4) updatedSf[1].p2 = player;
       setSf(updatedSf);
       updates.sf = updatedSf;
-    } else if (matchPhase === "sf") {
+      if (updatedFinal) {
+        setFinal(updatedFinal);
+        updates.final = updatedFinal;
+      }
+    } 
+    else if (matchPhase === "sf") {
       const idx = matchId - 5;
       const updatedSf = [...sf];
-      updatedSf[idx].winner = player;
+      const updatedFinal = final ? { ...final } : null;
+      
+      if (updatedSf[idx].winner === player) {
+        // 이미 승자이면 취소
+        updatedSf[idx].winner = null;
+        
+        if (updatedFinal) {
+          if (matchId === 5) {
+            if (updatedFinal.winner === updatedFinal.p1) updatedFinal.winner = null;
+            updatedFinal.p1 = "";
+          } else if (matchId === 6) {
+            if (updatedFinal.winner === updatedFinal.p2) updatedFinal.winner = null;
+            updatedFinal.p2 = "";
+          }
+        }
+      } else {
+        // 새로 승자 지정
+        updatedSf[idx].winner = player;
+        if (updatedFinal) {
+          if (matchId === 5) updatedFinal.p1 = player;
+          else if (matchId === 6) updatedFinal.p2 = player;
+        }
+      }
+      
       setSf(updatedSf);
       updates.sf = updatedSf;
-
+      if (updatedFinal) {
+        setFinal(updatedFinal);
+        updates.final = updatedFinal;
+      }
+    } 
+    else if (matchPhase === "f") {
       if (!final) return;
       const updatedFinal = { ...final };
-      if (matchId === 5) updatedFinal.p1 = player;
-      else if (matchId === 6) updatedFinal.p2 = player;
+      
+      if (updatedFinal.winner === player) {
+        // 이미 챔피언 우승자이면 취소
+        updatedFinal.winner = null;
+        setRankings([]);
+        updates.rankings = [];
+      } else {
+        // 우승 처리 및 랭킹 부여
+        updatedFinal.winner = player;
+        const secondPlace = final.p1 === player ? final.p2 : final.p1;
+        const newRankings = [
+          { rank: 1, name: player, score: "우승" },
+          { rank: 2, name: secondPlace || "", score: "준우승" },
+          { rank: 3, name: "", score: "" },
+        ];
+        setRankings(newRankings);
+        updates.rankings = newRankings;
+      }
+      
       setFinal(updatedFinal);
       updates.final = updatedFinal;
-    } else if (matchPhase === "f") {
-      if (!final) return;
-      const updatedFinal = { ...final };
-      updatedFinal.winner = player;
-      setFinal(updatedFinal);
-      updates.final = updatedFinal;
-
-      const secondPlace = final.p1 === player ? final.p2 : final.p1;
-      const newRankings = [
-        { rank: 1, name: player, score: "우승" },
-        { rank: 2, name: secondPlace || "", score: "준우승" },
-        { rank: 3, name: "", score: "" },
-      ];
-      setRankings(newRankings);
-      updates.rankings = newRankings;
     }
+    
     saveSession(updates);
   };
 
@@ -610,6 +681,7 @@ export default function App() {
   ) => {
     if (!match) return null;
     const isDark = theme === "dark";
+    const isFinal = phaseLabel === "f";
 
     const PlayerButton = ({
       player,
@@ -617,53 +689,70 @@ export default function App() {
     }: {
       player: string;
       side: "p1" | "p2";
-    }) => (
-      <motion.button
-        drag
-        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-        dragElastic={0.4}
-        onDragEnd={(_, info) => {
-          // If dragged up significantly, advance
-          if (info.offset.y < -30) {
-            advancePlayer(phaseLabel, match.id, player);
-          }
-        }}
-        disabled={!player || match.winner === player}
-        onClick={() => advancePlayer(phaseLabel, match.id, player)}
-        className={`relative w-full px-4 py-3 text-xs font-bold rounded-2xl overflow-hidden text-ellipsis whitespace-nowrap transition-all duration-300 touch-none ${
-          match.winner === player
-            ? "bg-indigo-600 text-white shadow-lg scale-105 shadow-indigo-500/40 z-20"
-            : player && !match.winner
-              ? isDark
-                ? "bg-white/5 hover:bg-white/10 text-white border border-white/10"
-                : "bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200 cursor-grab active:cursor-grabbing"
-              : player && match.winner !== player
+    }) => {
+      const isWinner = match.winner === player;
+      const isLoser = match.winner && match.winner !== player;
+      
+      // 앞단의 "숫자 + 점 + 공백"(예: "14. 루다") 패턴을 정교하게 걸러내어 숫자 번호 제거
+      const cleanedName = player ? player.replace(/^\d+\.\s*/, "") : "";
+
+      return (
+        <motion.button
+          whileHover={player && !isLoser ? { scale: 1.02 } : {}}
+          whileTap={player && !isLoser ? { scale: 0.98 } : {}}
+          disabled={!player}
+          onClick={() => advancePlayer(phaseLabel, match.id, player)}
+          className={`relative w-full px-4 ${isFinal ? "py-4 text-sm" : "py-3 text-xs"} font-black rounded-xl overflow-hidden transition-all duration-300 pointer-events-auto flex items-center justify-between border ${
+            isWinner
+              ? "bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600 text-white shadow-[0_8px_25px_rgba(99,102,241,0.4)] border-indigo-400/30 z-20"
+              : player && !match.winner
                 ? isDark
-                  ? "bg-black/50 text-white/20"
-                  : "bg-gray-50 text-gray-300" // loser
-                : isDark
-                  ? "bg-black/20 text-white/10 border border-white/5"
-                  : "bg-gray-50/50 text-gray-200 border border-gray-50"
-        }`}
-      >
-        <span>{player || "WAITING"}</span>
-        {player && !match.winner && (
-          <div className="absolute top-1 right-2 opacity-20 group-hover:opacity-40">
-            <Edit3 className="w-3 h-3" />
-          </div>
-        )}
-      </motion.button>
-    );
+                  ? "bg-white/5 hover:bg-white/10 hover:text-indigo-400 text-white border-white/10 hover:border-indigo-500/50 cursor-pointer"
+                  : "bg-gray-100/70 hover:bg-gray-200/90 hover:text-indigo-600 text-gray-800 border-gray-200 hover:border-indigo-500/50 cursor-pointer"
+                : player && isLoser
+                  ? isDark
+                    ? "bg-black/30 text-white/20 border-transparent scale-95 opacity-40 grayscale"
+                    : "bg-gray-50/70 text-gray-300 border-transparent scale-95 opacity-40 grayscale"
+                  : isDark
+                    ? "bg-black/10 text-white/5 border-white/5 pointer-events-none"
+                    : "bg-gray-50/30 text-gray-200 border-gray-100 pointer-events-none"
+          }`}
+        >
+          <span className="truncate max-w-[85%] font-sans pr-1 text-left block w-full">
+            {cleanedName || "대기중..."}
+          </span>
+          {isWinner && (
+            <motion.span
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className={`px-1.5 py-0.5 ${isFinal ? "text-[10px] bg-yellow-400 text-black" : "text-[8px] bg-white text-indigo-600"} rounded font-black tracking-widest shrink-0 shadow-sm border border-indigo-200/30 font-sans`}
+            >
+              WIN
+            </motion.span>
+          )}
+        </motion.button>
+      );
+    };
 
     return (
       <div
-        className={`flex flex-col gap-2 w-full max-w-[170px] p-4 rounded-3xl border shadow-xl z-10 transition-all hover:-translate-y-1 hover:shadow-2xl ${isDark ? "bg-black/40 border-white/10 backdrop-blur-xl" : "bg-white/80 border-gray-200 shadow-gray-200/50 backdrop-blur-md"}`}
+        className={`flex flex-col gap-2 w-full ${isFinal ? "w-[210px] md:w-[250px] p-[18px] rounded-[32px] ring-2 ring-indigo-500/30 shadow-[0_30px_70px_rgba(99,102,241,0.25)]" : "max-w-[170px] p-3 rounded-[24px] border shadow-2xl"} relative z-10 transition-all duration-300 hover:-translate-y-1 ${
+          isDark 
+            ? isFinal 
+              ? "bg-gradient-to-b from-gray-900 via-indigo-950/20 to-black border-indigo-500/30 shadow-indigo-950/50 backdrop-blur-3xl"
+              : "bg-gradient-to-b from-gray-900/90 to-black/85 border-white/5 shadow-black/80 backdrop-blur-2xl" 
+            : isFinal
+              ? "bg-gradient-to-b from-white via-indigo-50/20 to-gray-50 border-indigo-200/50 shadow-indigo-100/40 backdrop-blur-3xl"
+              : "bg-gradient-to-b from-white/95 to-gray-50/90 border-black/[0.04] shadow-gray-200/40 backdrop-blur-md"
+        }`}
       >
         <PlayerButton player={match.p1} side="p1" />
-        <div
-          className={`text-center text-[9px] font-black tracking-[0.2em] uppercase ${isDark ? "text-white/20" : "text-gray-300"}`}
-        >
-          VS
+        <div className="flex items-center justify-center gap-2 px-1 py-0.5">
+          <div className={`h-[1px] flex-1 ${isDark ? isFinal ? "bg-indigo-500/20" : "bg-white/5" : isFinal ? "bg-indigo-200/50" : "bg-black/[0.03]"}`}></div>
+          <span className={`text-[8px] font-black tracking-widest uppercase shrink-0 select-none ${isDark ? isFinal ? "text-indigo-400" : "text-white/10" : isFinal ? "text-indigo-600" : "text-black/15"}`}>
+            VS
+          </span>
+          <div className={`h-[1px] flex-1 ${isDark ? isFinal ? "bg-indigo-500/20" : "bg-white/5" : isFinal ? "bg-indigo-200/50" : "bg-black/[0.03]"}`}></div>
         </div>
         <PlayerButton player={match.p2} side="p2" />
       </div>
@@ -721,13 +810,13 @@ export default function App() {
         </div>
       </div>
 
-      {/* 2. DYNAMIC LOGO BANNER AREA (헤더 뒷편으로 겹치며, 높이를 더욱 키우고 최상단으로 한껏 배치) */}
-      <div className="h-[52vh] w-full flex items-center justify-center p-4 pt-14 shrink-0 relative z-10 select-none">
+      {/* 2. DYNAMIC LOGO BANNER AREA (헤더 뒷편으로 정교하게 겹치며, 우주 플로팅 효과 및 10% 확장 적용) */}
+      <div className="h-[31vh] w-full flex items-center justify-center p-4 pt-10 shrink-0 relative z-10 select-none">
         {logoImage ? (
           <motion.div
             animate={{
-              y: [0, -15, 0],
-              rotate: [0, 1.2, -1.2, 0],
+              y: [0, -10, 0],
+              rotate: [0, 0.6, -0.6, 0],
             }}
             transition={{
               duration: 6,
@@ -739,7 +828,7 @@ export default function App() {
             <img
               src={logoImage}
               alt="Main Logo"
-              className="h-full max-h-[48vh] w-auto max-w-[90vw] object-contain drop-shadow-2xl"
+              className="h-full max-h-[28vh] w-auto max-w-[80vw] object-contain drop-shadow-2xl"
             />
           </motion.div>
         ) : (
@@ -755,8 +844,8 @@ export default function App() {
       <div
         className={`flex-1 w-full relative z-20 flex flex-col overflow-visible min-h-0 ${theme === "dark" ? "bg-gradient-to-t from-gray-950/80 via-transparent to-transparent" : "bg-gradient-to-t from-gray-50/80 via-transparent to-transparent"}`}
       >
-        {/* Shared Phase Navigation & Controls (마진 조정을 통해 버튼을 위로 올리고, 참가자 카드와의 사이 공간을 확보) */}
-        <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-10 mb-10 shrink-0 -mt-12 pt-1 z-30">
+        {/* Shared Phase Navigation & Controls (마진 조정을 통해 전체 본문 영역을 적절한 위상으로 더 내려 공간적 안정감 확보) */}
+        <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-10 mb-12 shrink-0 -mt-6 pt-1 z-30">
           {/* Left: Phase Navigation Tabs */}
           <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-black/5 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/5">
             {[
@@ -817,25 +906,25 @@ export default function App() {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   onClick={startTournament}
-                  className="group relative flex items-center justify-center gap-3 w-[180px] h-[52px] bg-indigo-600 text-white rounded-2xl font-black shadow-[0_15px_30px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all overflow-hidden"
+                  className="group relative flex items-center justify-center gap-2.5 w-[145px] h-[52px] bg-indigo-600 text-white rounded-2xl font-black text-xs shadow-[0_15px_30px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all overflow-hidden"
                 >
-                  <Trophy className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                  <span>{targetCount}강 토너먼트 시작</span>
+                  <Trophy className="w-4 h-4 group-hover:rotate-12 transition-transform decoration-transparent shrink-0" />
+                  <span className="truncate">{targetCount}강 스타트</span>
                 </motion.button>
               ) : (
                 <button
                   onClick={startRandomPick}
                   disabled={isPicking || participants.length === 0}
-                  className={`relative group w-[180px] h-[52px] rounded-2xl font-black shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
+                  className={`relative group w-[145px] h-[52px] rounded-2xl font-black text-xs shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
                     theme === "dark"
                       ? "bg-white/10 text-white hover:bg-white/20 disabled:bg-gray-900 disabled:text-gray-700"
                       : "bg-indigo-600 text-white hover:bg-indigo-500 disabled:bg-gray-200 disabled:text-gray-400 shadow-indigo-200"
                   }`}
                 >
                   <Dices
-                    className={`w-5 h-5 flex-shrink-0 ${isPicking ? "animate-spin" : ""}`}
+                    className={`w-4 h-4 flex-shrink-0 ${isPicking ? "animate-spin" : ""}`}
                   />
-                  <span>{isPicking ? "추첨 중..." : "1명 랜덤 선발"}</span>
+                  <span className="truncate">{isPicking ? "선발 중..." : "1명 랜덤 선발"}</span>
                 </button>
               )}
             </div>
@@ -917,21 +1006,24 @@ export default function App() {
                           }}
                           onClick={(e: React.MouseEvent) => {
                             e.preventDefault();
-                            setContextMenu({
-                              x: e.clientX,
-                              y: e.clientY,
-                              participant,
-                              index: i,
-                            });
+                            // 좌클릭 시 대기 -> 선택 -> 통과 -> 탈락 상태로 4단계 순환 토글
+                            const currentStatus = getStatus(participant, i);
+                            let nextStatus: "WAITING" | "PICKED" | "PASS" | "FAIL" = "WAITING";
+                            if (currentStatus === "WAITING") {
+                              nextStatus = "PICKED";
+                            } else if (currentStatus === "PICKED") {
+                              nextStatus = "PASS";
+                            } else if (currentStatus === "PASS") {
+                              nextStatus = "FAIL";
+                            } else if (currentStatus === "FAIL") {
+                              nextStatus = "WAITING";
+                            } else {
+                              nextStatus = "WAITING";
+                            }
+                            setStatus(participant, i, nextStatus);
                           }}
                           onContextMenu={(e: React.MouseEvent) => {
                             e.preventDefault();
-                            setContextMenu({
-                              x: e.clientX,
-                              y: e.clientY,
-                              participant,
-                              index: i,
-                            });
                           }}
                           className={`
                                    w-full flex items-center justify-center px-1 rounded-xl border font-black cursor-pointer select-none
@@ -992,30 +1084,30 @@ export default function App() {
 
               {/* Final */}
               <div
-                className={`flex flex-col justify-center h-full relative z-20 items-center ${targetCount === 4 ? "w-[20%]" : "w-[25%]"}`}
+                className={`flex flex-col justify-center h-full relative z-20 items-center ${targetCount === 4 ? "w-[25%]" : "w-[30%]"}`}
               >
                 <div
-                  className={`text-center font-black mb-6 text-xl lg:text-3xl tracking-tighter flex flex-col items-center gap-3 ${theme === "dark" ? "text-white" : "text-gray-900"}`}
+                  className={`text-center font-black mb-6 text-xl lg:text-3xl tracking-tighter flex flex-col items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}
                 >
-                  <Trophy className="w-12 h-12 text-indigo-600 drop-shadow-[0_0_15px_rgba(79,70,229,0.5)]" />
-                  <span>FINALS</span>
+                  <Trophy className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_15px_rgba(79,70,229,0.5)]" />
+                  <span className="tracking-widest text-xs font-sans text-indigo-500">FINALS</span>
                 </div>
-                <div className="scale-110 md:scale-125 lg:scale-150 transform">
+                <div className="relative z-30">
                   {renderBracketMatch(final, "f")}
                 </div>
                 {final?.winner && (
                   <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="mt-16 text-center"
+                    className="mt-8 text-center"
                   >
-                    <div className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-2">
-                      Champion
+                    <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">
+                      👑 Champion
                     </div>
                     <div
-                      className={`text-4xl lg:text-6xl font-black drop-shadow-sm uppercase ${theme === "dark" ? "text-white" : "text-gray-900"}`}
+                      className={`text-3xl lg:text-5xl font-black drop-shadow-sm uppercase ${theme === "dark" ? "text-white" : "text-gray-900"}`}
                     >
-                      {final.winner}
+                      {final.winner.replace(/^\d+\.\s*/, "")}
                     </div>
                   </motion.div>
                 )}
